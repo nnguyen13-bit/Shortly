@@ -1,0 +1,14 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Shortly.Api/Shortly.Api.csproj" />
+    <Project Path="src/Shortly.Application/Shortly.Application.csproj" />
+    <Project Path="src/Shortly.Domain/Shortly.Domain.csproj" />
+    <Project Path="src/Shortly.Infrastructure/Shortly.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Shortly.Api.Tests/Shortly.Api.Tests.csproj" />
+    <Project Path="tests/Shortly.Application.Tests/Shortly.Application.Tests.csproj" />
+    <Project Path="tests/Shortly.Domain.Tests/Shortly.Domain.Tests.csproj" />
+    <Project Path="tests/Shortly.Infrastructure.Tests/Shortly.Infrastructure.Tests.csproj" />
+  </Folder>
+</Solution>

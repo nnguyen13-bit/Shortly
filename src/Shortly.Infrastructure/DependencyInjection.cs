@@ -1,0 +1,28 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Shortly.Application.Interfaces;
+using Shortly.Infrastructure.CodeGeneration;
+using Shortly.Infrastructure.Configuration;
+using Shortly.Infrastructure.Persistence;
+using Shortly.Infrastructure.Events;
+
+namespace Shortly.Infrastructure;
+
+public static class DependencyInjection
+{
+    public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
+        services.Configure<ServiceBusSettings>(configuration.GetSection(ServiceBusSettings.SectionName));
+
+        services.AddSingleton<MongoDbContext>();
+        services.AddScoped<ILinkRepository, MongoLinkRepository>();
+        services.AddScoped<ICustomDomainRepository, MongoCustomDomainRepository>();
+        services.AddSingleton<IShortCodeGenerator, RangeBasedCodeGenerator>();
+        services.AddSingleton<IEventPublisher, LoggingEventPublisher>();
+
+        services.AddHostedService<MongoDbIndexInitialiser>();
+
+        return services;
+    }
+}

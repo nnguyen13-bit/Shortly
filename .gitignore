@@ -5,6 +5,18 @@
 # VS Code workspace settings
 .vscode/
 
+# .NET build outputs
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# NuGet
+*.nupkg
+**/packages/*
+
 # Agentic Framework - Project Customizations
 # These files contain YOUR project-specific configurations
 # They are NEVER overwritten by framework updates
