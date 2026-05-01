@@ -12,7 +12,7 @@ Shortly needs to deploy two services with very different scaling profiles:
 - **Redirect Service**: Latency-critical (<100ms), read-heavy, must handle bursts, always-on
 - **Link Management Service**: Write path at 60K/day (~0.7 req/s average), can tolerate slightly higher latency
 
-Both services are .NET 8 applications deployed to Azure.
+Both services are .NET 10 applications deployed to Azure.
 
 ## Problem Statement
 
@@ -50,7 +50,7 @@ Which Azure compute platform should host Shortly's microservices, considering th
 
 - **Redirect Service**: min-replicas=1 (no cold start), scale on HTTP concurrent requests
 - **Link Management + Domain Registry**: min-replicas=0 (scale to zero when idle), scale on HTTP requests
-- Both services as .NET 8 containers with Dockerfiles
+- Both services as .NET 10 containers with Dockerfiles
 - Revision-based deployments for zero-downtime updates
 
 ## Consequences

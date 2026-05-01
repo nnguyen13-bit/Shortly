@@ -127,4 +127,4 @@ Legend:
 | Data Store | MongoDB (Azure Cosmos DB for MongoDB API or MongoDB Atlas) | Sub-5ms indexed reads, flexible document model, TTL indexes |
 | Async Messaging | Azure Service Bus | Reliable delivery, topics/subscriptions, dead-letter |
 | API Gateway | Azure API Management | Rate limiting, auth, routing |
-| Compute | Azure Container Apps | Serverless scaling, .NET 8, cost-efficient |
+| Compute | Azure Container Apps | Serverless scaling, .NET 10, cost-efficient |

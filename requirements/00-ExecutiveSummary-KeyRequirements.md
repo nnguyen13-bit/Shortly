@@ -12,7 +12,7 @@ Current solutions like Bitly provide generic shortening but lack the ability to 
 
 **Shortly** is a high-throughput URL shortening platform that produces minimal-length short links with embedded business domain context. Each link follows the format `{base-url}/{domain-prefix}/{short-code}` — for example, `https://sh.rt/ho/a3Bx9` where `ho` identifies the link as belonging to the "Handover Order" domain.
 
-The platform is designed to handle 60,000 link creations per day with burst capacity of 1,000 requests per second, while redirecting users in under 100 milliseconds (p99). It is built as a set of microservices on .NET 8, Azure Container Apps, and MongoDB.
+The platform is designed to handle 60,000 link creations per day with burst capacity of 1,000 requests per second, while redirecting users in under 100 milliseconds (p99). It is built as a set of microservices on .NET 10, Azure Container Apps, and MongoDB.
 
 ### Key Benefits
 

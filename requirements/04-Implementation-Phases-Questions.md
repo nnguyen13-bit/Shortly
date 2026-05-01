@@ -43,7 +43,7 @@ Deliver a working URL shortening platform that can create links, redirect users,
 ### Technical Tasks
 
 #### 1.1 Solution Scaffolding
-- Create .NET 8 solution with Clean Architecture layers
+- Create .NET 10 solution with Clean Architecture layers
   - `Shortly.Domain` — Entities, value objects, domain events, interfaces
   - `Shortly.Application` — Use cases, commands, queries, handlers
   - `Shortly.Infrastructure` — MongoDB repositories, Service Bus publisher, code generator

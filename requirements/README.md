@@ -90,6 +90,6 @@ This PRD was generated from:
 ## Next Steps
 
 After PRD review and approval:
-1. Run `/.implement` to scaffold .NET 8 solution from Phase 1 requirements
+1. Run `/.implement` to scaffold .NET 10 solution from Phase 1 requirements
 2. Use Doc 03 acceptance criteria to drive TDD implementation
 3. Validate with `/.architecture-compliance` after each feature
