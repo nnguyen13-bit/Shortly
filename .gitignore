@@ -1,0 +1,15 @@
+
+# Agentic Framework (linked via directory junction)
+.agentic/
+
+# VS Code workspace settings
+.vscode/
+
+# Agentic Framework - Project Customizations
+# These files contain YOUR project-specific configurations
+# They are NEVER overwritten by framework updates
+project-config/
+!project-config/.gitkeep
+
+# Framework updates only touch .agentic/ directory
+# Your customizations in project-config/ are always safe
