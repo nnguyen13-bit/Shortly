@@ -3,6 +3,7 @@ using Shortly.Application.Interfaces;
 using Shortly.Domain.CustomDomains;
 using Shortly.Domain.LinkManagement;
 using Shortly.Infrastructure.Persistence.Documents;
+using Shortly.Infrastructure.Persistence.Mappers;
 
 namespace Shortly.Infrastructure.Persistence;
 
@@ -19,7 +20,7 @@ public sealed class MongoCustomDomainRepository : ICustomDomainRepository
     {
         var filter = Builders<CustomDomainDocument>.Filter.Eq(d => d.Prefix, prefix.Value);
         var document = await _collection.Find(filter).FirstOrDefaultAsync(cancellationToken);
-        return document?.ToDomain();
+        return document is null ? null : CustomDomainMapper.ToDomain(document);
     }
 
     public async Task<IReadOnlyList<CustomDomain>> GetAllAsync(bool? activeOnly = null, CancellationToken cancellationToken = default)
@@ -29,18 +30,18 @@ public sealed class MongoCustomDomainRepository : ICustomDomainRepository
             : Builders<CustomDomainDocument>.Filter.Empty;
 
         var documents = await _collection.Find(filter).ToListAsync(cancellationToken);
-        return documents.Select(d => d.ToDomain()).ToList();
+        return documents.Select(CustomDomainMapper.ToDomain).ToList();
     }
 
     public async Task AddAsync(CustomDomain customDomain, CancellationToken cancellationToken = default)
     {
-        var document = CustomDomainDocument.FromDomain(customDomain);
+        var document = CustomDomainMapper.ToDocument(customDomain);
         await _collection.InsertOneAsync(document, cancellationToken: cancellationToken);
     }
 
     public async Task UpdateAsync(CustomDomain customDomain, CancellationToken cancellationToken = default)
     {
-        var document = CustomDomainDocument.FromDomain(customDomain);
+        var document = CustomDomainMapper.ToDocument(customDomain);
         var filter = Builders<CustomDomainDocument>.Filter.Eq(d => d.Id, customDomain.Id.Value);
         await _collection.ReplaceOneAsync(filter, document, cancellationToken: cancellationToken);
     }

@@ -12,6 +12,27 @@ public sealed class CustomDomain : Entity<CustomDomainId>
 
     private CustomDomain() { } // Mapping
 
+    /// <summary>
+    /// Reconstitutes a CustomDomain from persistence. No validation, no domain events.
+    /// </summary>
+    internal CustomDomain(
+        CustomDomainId id,
+        DomainPrefix prefix,
+        string name,
+        string? description,
+        bool isActive,
+        DateTimeOffset createdAt,
+        int version)
+    {
+        Id = id;
+        Prefix = prefix;
+        Name = name;
+        Description = description;
+        IsActive = isActive;
+        CreatedAt = createdAt;
+        SetVersion(version);
+    }
+
     public static CustomDomain Register(DomainPrefix prefix, string name, string? description = null)
     {
         if (string.IsNullOrWhiteSpace(name))

@@ -25,6 +25,14 @@ public abstract class Entity<TId> where TId : notnull
         Version++;
     }
 
+    /// <summary>
+    /// Sets the version during reconstitution from persistence. Infrastructure use only.
+    /// </summary>
+    internal void SetVersion(int version)
+    {
+        Version = version;
+    }
+
     public override bool Equals(object? obj)
     {
         if (obj is not Entity<TId> other)

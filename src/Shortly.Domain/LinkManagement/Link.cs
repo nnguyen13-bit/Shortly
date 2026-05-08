@@ -14,6 +14,33 @@ public sealed class Link : Entity<LinkId>
 
     private Link() { } // EF/MongoDB mapping
 
+    /// <summary>
+    /// Reconstitutes a Link from persistence. No validation, no domain events.
+    /// </summary>
+    internal Link(
+        LinkId id,
+        ShortCode shortCode,
+        DomainPrefix domainPrefix,
+        DestinationUrl destinationUrl,
+        LinkStatus status,
+        DateTimeOffset createdAt,
+        DateTimeOffset? expiresAt,
+        string createdBy,
+        LinkMetadata metadata,
+        int version)
+    {
+        Id = id;
+        ShortCode = shortCode;
+        DomainPrefix = domainPrefix;
+        DestinationUrl = destinationUrl;
+        Status = status;
+        CreatedAt = createdAt;
+        ExpiresAt = expiresAt;
+        CreatedBy = createdBy;
+        Metadata = metadata;
+        SetVersion(version);
+    }
+
     public static Link Create(
         ShortCode shortCode,
         DomainPrefix domainPrefix,
