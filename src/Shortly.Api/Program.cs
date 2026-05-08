@@ -1,3 +1,4 @@
+using Shortly.Api.Middleware;
 using Shortly.Application;
 using Shortly.Infrastructure;
 
@@ -19,6 +20,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.MapControllers();
 

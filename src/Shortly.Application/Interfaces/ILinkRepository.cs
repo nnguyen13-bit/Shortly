@@ -8,4 +8,5 @@ public interface ILinkRepository
     Task<Link?> GetByPrefixAndCodeAsync(DomainPrefix prefix, ShortCode code, CancellationToken cancellationToken = default);
     Task AddAsync(Link link, CancellationToken cancellationToken = default);
     Task UpdateAsync(Link link, CancellationToken cancellationToken = default);
+    Task<long> CountByPrefixAsync(DomainPrefix prefix, CancellationToken cancellationToken = default);
 }

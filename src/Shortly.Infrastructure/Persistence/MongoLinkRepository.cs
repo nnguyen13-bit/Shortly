@@ -43,4 +43,13 @@ public sealed class MongoLinkRepository : ILinkRepository
         var filter = Builders<LinkDocument>.Filter.Eq(d => d.Id, link.Id.Value);
         await _collection.ReplaceOneAsync(filter, document, cancellationToken: cancellationToken);
     }
+
+    public async Task<long> CountByPrefixAsync(DomainPrefix prefix, CancellationToken cancellationToken = default)
+    {
+        var filter = Builders<LinkDocument>.Filter.And(
+            Builders<LinkDocument>.Filter.Eq(d => d.DomainPrefix, prefix.Value),
+            Builders<LinkDocument>.Filter.Eq(d => d.Status, LinkStatus.Active.ToString()));
+
+        return await _collection.CountDocumentsAsync(filter, cancellationToken: cancellationToken);
+    }
 }
