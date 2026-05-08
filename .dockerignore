@@ -1,0 +1,17 @@
+**/.git
+**/.gitignore
+**/.vscode
+**/.agentic
+**/bin
+**/obj
+**/node_modules
+**/tests
+**/architecture
+**/requirements
+**/project-config
+**/infra
+**/*.md
+**/*.user
+**/docker-compose*.yml
+**/Dockerfile
+**/.dockerignore
