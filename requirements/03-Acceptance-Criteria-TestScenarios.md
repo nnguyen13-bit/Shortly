@@ -563,6 +563,116 @@ And the failure to publish the event is logged at ERROR level
 
 ---
 
+## 9. Infrastructure as Code (FR-IAC-001 to FR-IAC-005)
+
+### TC-IAC-001: Terraform plan on clean subscription [SMOKE]
+
+```gherkin
+Given a clean Azure subscription with no Shortly resources
+And the dev.tfvars environment file
+When I run "terraform plan -var-file=environments/dev.tfvars"
+Then the plan succeeds with no errors
+And the plan shows resources to be created:
+  | resource                          |
+  | azurerm_resource_group            |
+  | azurerm_key_vault                 |
+  | azurerm_container_registry        |
+  | azurerm_servicebus_namespace      |
+  | azurerm_servicebus_topic          |
+  | azurerm_servicebus_subscription   |
+  | azurerm_container_app_environment |
+  | azurerm_container_app             |
+```
+**Validates:** FR-IAC-001
+
+### TC-IAC-002: Terraform apply provisions all resources [SMOKE]
+
+```gherkin
+Given a clean Azure subscription
+And the dev.tfvars environment file
+When I run "terraform apply -var-file=environments/dev.tfvars -auto-approve"
+Then the apply completes successfully
+And all resources exist in the specified resource group
+And all resources are tagged with project="shortly", environment="dev", managed-by="terraform"
+```
+**Validates:** FR-IAC-001.4
+
+### TC-IAC-003: Terraform plan is idempotent [REGRESSION]
+
+```gherkin
+Given all Shortly resources have been provisioned via Terraform
+When I run "terraform plan -var-file=environments/dev.tfvars"
+Then the plan shows "No changes. Your infrastructure matches the configuration."
+```
+**Validates:** FR-IAC-001
+
+### TC-IAC-004: Service Bus topic and subscription provisioned correctly [REGRESSION]
+
+```gherkin
+Given the Terraform configuration has been applied
+When I inspect the Service Bus namespace
+Then a topic named "shortly-events" exists with 7-day message TTL
+And a subscription named "event-processor" exists with dead-lettering enabled
+And a Send-only authorisation rule named "app-send" exists
+And the Send-only connection string is stored in Key Vault
+```
+**Validates:** FR-IAC-003
+
+### TC-IAC-005: Key Vault provisioned with RBAC [REGRESSION]
+
+```gherkin
+Given the Terraform configuration has been applied
+When I inspect the Key Vault
+Then the Key Vault uses RBAC-based access control
+And soft delete is enabled
+And the Container App managed identity has "Key Vault Secrets User" role
+```
+**Validates:** FR-IAC-004
+
+### TC-IAC-006: Container App pulls image via managed identity [REGRESSION]
+
+```gherkin
+Given the Terraform configuration has been applied
+And a container image has been pushed to the Container Registry
+When the Container App is deployed
+Then the Container App pulls the image from ACR via managed identity (no admin credentials)
+And the Container App is accessible via its FQDN over HTTPS
+```
+**Validates:** FR-IAC-002, FR-IAC-005
+
+### TC-IAC-007: Container App health probes configured [REGRESSION]
+
+```gherkin
+Given the Terraform configuration has been applied
+When I inspect the Container App configuration
+Then a liveness probe is configured at "/health/live"
+And a readiness probe is configured at "/health/ready"
+```
+**Validates:** FR-IAC-002.4
+
+### TC-IAC-008: Container App auto-scaling configured [EDGE]
+
+```gherkin
+Given the Terraform configuration has been applied
+When I inspect the Container App scaling rules
+Then the minimum replica count is configured (default: 1)
+And the maximum replica count is configured (default: 10)
+And an HTTP scaling rule triggers at 50 concurrent requests per instance
+```
+**Validates:** FR-IAC-002.6
+
+### TC-IAC-009: Environment separation via tfvars [REGRESSION]
+
+```gherkin
+Given dev.tfvars with environment="dev" and prod.tfvars with environment="prod"
+When I compare the terraform plans for each
+Then resource names include the environment suffix (e.g., "shortly-events-dev" vs "shortly-events-prod")
+And the resources are isolated from each other
+```
+**Validates:** FR-IAC-001.3
+
+---
+
 ## Test Coverage Matrix
 
 | Requirement | Test Cases | Coverage |
@@ -586,6 +696,11 @@ And the failure to publish the event is logged at ERROR level
 | FR-INF-002 | TC-INF-004 | Full |
 | FR-INF-003 | TC-EVT-001 to TC-EVT-003 | Full |
 | FR-INF-004 | TC-INF-005 | Full |
+| FR-IAC-001 | TC-IAC-001 to TC-IAC-003, TC-IAC-009 | Full |
+| FR-IAC-002 | TC-IAC-006 to TC-IAC-008 | Full |
+| FR-IAC-003 | TC-IAC-004 | Full |
+| FR-IAC-004 | TC-IAC-005 | Full |
+| FR-IAC-005 | TC-IAC-006 | Full |
 
 ### Business Rules Traceability
 

@@ -9,7 +9,7 @@
 | Phase | Requirements | Scope |
 |-------|-------------|-------|
 | Phase 1 (MVP) | FR-LNK-001 to FR-LNK-005, FR-RDR-001 to FR-RDR-004, FR-DOM-001 to FR-DOM-003, FR-API-001, FR-INF-001 to FR-INF-003 | Link creation, redirect, domain registry, core API |
-| Phase 2 (Production Hardening) | FR-SEC-001 to FR-SEC-003, FR-OBS-001 to FR-OBS-003, FR-ADM-001, FR-INF-004 | Security, observability, admin, resilience |
+| Phase 2 (Production Hardening) | FR-SEC-001 to FR-SEC-003, FR-OBS-001 to FR-OBS-003, FR-ADM-001, FR-INF-004 to FR-INF-007, FR-IAC-001 to FR-IAC-005 | Security, observability, admin, resilience, IaC |
 | Phase 3 (Analytics & Enhancements) | FR-ANL-001 to FR-ANL-003, FR-LNK-006, FR-ADM-002 | Analytics, bulk creation, reporting |
 
 ---
@@ -586,3 +586,108 @@
 - Given 1000 links across 3 prefixes, when filtering by prefix `ho`, then only links with prefix `ho` are returned
 
 **Dependencies:** FR-LNK-001
+
+---
+
+## 10. Infrastructure as Code
+
+### FR-IAC-001: Terraform Project Structure
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall define all Azure infrastructure as code using Terraform, enabling repeatable, auditable, and version-controlled deployments.
+
+**Detailed Requirements:**
+- FR-IAC-001.1: Terraform configuration shall use a modular structure with reusable modules per resource type
+- FR-IAC-001.2: Remote state shall be stored in Azure Storage Account with state locking
+- FR-IAC-001.3: Environment-specific configuration shall be managed via `.tfvars` files (dev, staging, prod)
+- FR-IAC-001.4: All resources shall be tagged with `project`, `environment`, and `managed-by` tags
+- FR-IAC-001.5: Terraform version and provider versions shall be pinned
+
+**Acceptance Criteria:**
+- Given a clean Azure subscription, when `terraform apply` is run with dev variables, then all required resources are provisioned
+- Given an existing deployment, when `terraform plan` is run with no changes, then the plan shows no modifications
+
+**Dependencies:** None
+
+---
+
+### FR-IAC-002: Azure Container Apps Deployment
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall deploy the Shortly API as an Azure Container App with auto-scaling and ingress configuration.
+
+**Detailed Requirements:**
+- FR-IAC-002.1: Provision Azure Container Apps Environment with a Log Analytics workspace
+- FR-IAC-002.2: Deploy the API container with configurable CPU/memory limits and min/max replicas
+- FR-IAC-002.3: Configure external ingress on port 8080 with HTTPS
+- FR-IAC-002.4: Configure health probes using `/health/live` (liveness) and `/health/ready` (readiness)
+- FR-IAC-002.5: Inject application settings (MongoDB connection string, Service Bus connection string) from Key Vault references
+- FR-IAC-002.6: Configure auto-scaling rules based on HTTP concurrent requests (default: scale at 50 concurrent requests per instance)
+
+**Acceptance Criteria:**
+- Given the Terraform configuration is applied, when the container image is deployed, then the API is accessible via the Container Apps FQDN
+- Given traffic exceeds the scaling threshold, when auto-scaling triggers, then additional replicas are created
+
+**Dependencies:** FR-IAC-001, FR-IAC-004
+
+---
+
+### FR-IAC-003: Azure Service Bus Provisioning
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall provision Azure Service Bus namespace, topic, and subscription via Terraform.
+
+**Detailed Requirements:**
+- FR-IAC-003.1: Provision Service Bus namespace with Standard SKU (required for topics)
+- FR-IAC-003.2: Create `shortly-events` topic with 7-day message TTL and ordering support
+- FR-IAC-003.3: Create `event-processor` subscription with dead-lettering on expiration
+- FR-IAC-003.4: Create a Send-only authorisation rule for the application (least-privilege)
+- FR-IAC-003.5: Store the Send-only connection string in Azure Key Vault
+
+**Acceptance Criteria:**
+- Given the Terraform configuration is applied, then the Service Bus namespace, topic, and subscription exist
+- Given the application starts, when it reads the connection string from Key Vault, then it can publish events to the topic
+
+**Dependencies:** FR-IAC-001, FR-IAC-004
+
+---
+
+### FR-IAC-004: Azure Key Vault for Secrets Management
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall provision Azure Key Vault to store and manage all application secrets.
+
+**Detailed Requirements:**
+- FR-IAC-004.1: Provision Azure Key Vault with RBAC-based access control
+- FR-IAC-004.2: Store MongoDB connection string, Service Bus connection string, and API keys as Key Vault secrets
+- FR-IAC-004.3: Grant the Container App managed identity `Key Vault Secrets User` role
+- FR-IAC-004.4: Enable soft delete and purge protection for production environments
+
+**Acceptance Criteria:**
+- Given the Terraform configuration is applied, then the Key Vault exists with all required secrets
+- Given the Container App starts, when it accesses Key Vault via managed identity, then it retrieves secrets without credentials in config
+
+**Dependencies:** FR-IAC-001
+
+---
+
+### FR-IAC-005: Azure Container Registry
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall provision Azure Container Registry to store the Shortly API container image.
+
+**Detailed Requirements:**
+- FR-IAC-005.1: Provision Azure Container Registry with Basic SKU (upgradeable to Standard for geo-replication)
+- FR-IAC-005.2: Grant the Container App managed identity `AcrPull` role for image pulls
+- FR-IAC-005.3: Enable admin account only if required for CI/CD bootstrap; prefer managed identity
+
+**Acceptance Criteria:**
+- Given the Terraform configuration is applied, then the Container Registry exists
+- Given a container image is pushed, when the Container App is deployed, then it pulls the image successfully via managed identity
+
+**Dependencies:** FR-IAC-001

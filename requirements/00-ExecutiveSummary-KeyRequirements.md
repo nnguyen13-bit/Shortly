@@ -12,7 +12,7 @@ Current solutions like Bitly provide generic shortening but lack the ability to 
 
 **Shortly** is a high-throughput URL shortening platform that produces minimal-length short links with embedded business domain context. Each link follows the format `{base-url}/{domain-prefix}/{short-code}` — for example, `https://sh.rt/ho/a3Bx9` where `ho` identifies the link as belonging to the "Handover Order" domain.
 
-The platform is designed to handle 60,000 link creations per day with burst capacity of 1,000 requests per second, while redirecting users in under 100 milliseconds (p99). It is built as a set of microservices on .NET 10, Azure Container Apps, and MongoDB.
+The platform is designed to handle 60,000 link creations per day with burst capacity of 1,000 requests per second, while redirecting users in under 100 milliseconds (p99). It is built as a set of microservices on .NET 10, Azure Container Apps, and MongoDB. All Azure infrastructure is defined as code using Terraform, enabling repeatable, auditable, and environment-specific deployments.
 
 ### Key Benefits
 
@@ -121,6 +121,26 @@ Codes are generated using a **counter-based Base62 encoding** strategy:
 - Internal services can integrate in under 1 hour (simple REST API)
 - Support team can identify link context from URL without database lookup
 - No short code collisions in production (zero tolerance)
+- Infrastructure provisioning is fully automated — `terraform apply` from zero to running environment
+
+---
+
+## Deployment Platform
+
+| Component | Azure Service | IaC Module |
+|-----------|--------------|------------|
+| **API Hosting** | Azure Container Apps | `modules/container-apps/` |
+| **Container Images** | Azure Container Registry | `modules/container-registry/` |
+| **Event Messaging** | Azure Service Bus (Standard) | `modules/service-bus/` |
+| **Secrets Management** | Azure Key Vault | `modules/key-vault/` |
+| **Database** | MongoDB Atlas (external) | Configured via connection string in Key Vault |
+| **IaC Tool** | Terraform (AzureRM provider) | `infra/` root |
+
+**Key Principles:**
+- All infrastructure is version-controlled alongside application code
+- Secrets are never stored in config files — Key Vault with managed identity
+- Environment parity: dev, staging, and prod use the same Terraform modules with different `.tfvars`
+- Least-privilege access: Container App gets `AcrPull` + `Key Vault Secrets User` via managed identity
 
 ---
 

@@ -122,6 +122,11 @@ Add security, observability, and resilience required for production deployment.
 | FR-INF-005 | Redis cache for redirects | P1 |
 | FR-INF-006 | Horizontal scaling | P1 |
 | FR-INF-007 | MongoDB replica set | P1 |
+| FR-IAC-001 | Terraform project structure | P1 |
+| FR-IAC-002 | Azure Container Apps deployment | P1 |
+| FR-IAC-003 | Azure Service Bus provisioning | P1 |
+| FR-IAC-004 | Azure Key Vault for secrets | P1 |
+| FR-IAC-005 | Azure Container Registry | P1 |
 | FR-ADM-001 | Link search | P1 |
 
 ### Technical Tasks
@@ -207,6 +212,42 @@ Add security, observability, and resilience required for production deployment.
 - Replace direct `PublishEventsAsync` calls with outbox writes
 - Integration test: verify events are published even if the process restarts after the DB write
 
+#### 2.13 Terraform Project Structure
+- Initialise `infra/` directory with Terraform configuration
+- Configure `azurerm` provider with version pinning
+- Configure remote state backend (Azure Storage Account)
+- Create `environments/` with `dev.tfvars`, `staging.tfvars`, `prod.tfvars`
+- Define resource group, naming conventions, and standard tags (`project`, `environment`, `managed-by`)
+- Add `.gitignore` entries for `.terraform/`, `*.tfstate`, `*.tfstate.backup`
+
+#### 2.14 Azure Key Vault Module
+- Create `modules/key-vault/` Terraform module
+- Provision Key Vault with RBAC-based access control
+- Enable soft delete and purge protection (configurable per environment)
+- Output Key Vault ID and URI for use by other modules
+
+#### 2.15 Azure Container Registry Module
+- Create `modules/container-registry/` Terraform module
+- Provision ACR with Basic SKU (configurable)
+- Output ACR login server URL and resource ID
+
+#### 2.16 Azure Service Bus Module
+- Create `modules/service-bus/` Terraform module
+- Provision namespace (Standard SKU), `shortly-events` topic, `event-processor` subscription
+- Create Send-only authorisation rule (least-privilege)
+- Store connection string in Key Vault as a secret
+- Configure 7-day message TTL and dead-lettering on expiration
+
+#### 2.17 Azure Container Apps Module
+- Create `modules/container-apps/` Terraform module
+- Provision Container Apps Environment with Log Analytics workspace
+- Deploy API container with configurable CPU/memory and replica counts
+- Configure external ingress (HTTPS, port 8080)
+- Configure liveness (`/health/live`) and readiness (`/health/ready`) probes
+- Inject secrets from Key Vault via managed identity
+- Grant managed identity `AcrPull` on Container Registry and `Key Vault Secrets User` on Key Vault
+- Configure HTTP-based auto-scaling (default: 50 concurrent requests per instance)
+
 ### Exit Criteria
 - All Phase 2 test cases pass (TC-SEC-001 to TC-SEC-004, TC-INF-001 to TC-INF-005)
 - Structured logs contain correlation IDs and are parseable as JSON
@@ -217,6 +258,10 @@ Add security, observability, and resilience required for production deployment.
 - 3 API instances handle 1,000 concurrent redirects with <100ms p99
 - MongoDB replica set failover completes within 10 seconds
 - Domain events are reliably published via transactional outbox (zero event loss)
+- `terraform plan` on a clean subscription shows all resources to be created with no errors
+- `terraform apply` provisions all resources (Container Apps, Service Bus, Key Vault, ACR) successfully
+- Container App pulls image from ACR and reads secrets from Key Vault via managed identity
+- `terraform plan` on an existing deployment shows no changes (idempotent)
 
 ---
 
@@ -328,7 +373,16 @@ Phase 2 (Production Hardening)
 ├── 2.5 Structured Logging (independent)
 ├── 2.6 Metrics (independent)
 ├── 2.7 Resilience (depends on Phase 1)
-└── 2.8 Link Search (depends on Phase 1)
+├── 2.8 Link Search (depends on Phase 1)
+├── 2.9 Redis Cache (depends on Phase 1)
+├── 2.10 Horizontal Scaling (depends on Phase 1)
+├── 2.11 MongoDB Replica Set (depends on Phase 1)
+├── 2.12 Transactional Outbox (depends on 1.6)
+└── 2.13 Terraform Project Structure (independent)
+    ├── 2.14 Key Vault Module (depends on 2.13)
+    ├── 2.15 Container Registry Module (depends on 2.13)
+    ├── 2.16 Service Bus Module (depends on 2.13, 2.14)
+    └── 2.17 Container Apps Module (depends on 2.13, 2.14, 2.15, 2.4)
 
 Phase 3 (Analytics)
 ├── 3.1 Analytics Consumer (depends on 1.6)
