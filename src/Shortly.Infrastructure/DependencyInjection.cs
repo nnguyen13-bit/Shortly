@@ -19,7 +19,18 @@ public static class DependencyInjection
         services.AddScoped<ILinkRepository, MongoLinkRepository>();
         services.AddScoped<ICustomDomainRepository, MongoCustomDomainRepository>();
         services.AddSingleton<IShortCodeGenerator, RangeBasedCodeGenerator>();
-        services.AddSingleton<IEventPublisher, LoggingEventPublisher>();
+
+        var serviceBusConnectionString = configuration.GetSection(ServiceBusSettings.SectionName)
+            .GetValue<string>(nameof(ServiceBusSettings.ConnectionString));
+
+        if (!string.IsNullOrWhiteSpace(serviceBusConnectionString))
+        {
+            services.AddSingleton<IEventPublisher, ServiceBusEventPublisher>();
+        }
+        else
+        {
+            services.AddSingleton<IEventPublisher, LoggingEventPublisher>();
+        }
 
         services.AddHostedService<MongoDbIndexInitialiser>();
 
