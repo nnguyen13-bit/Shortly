@@ -119,6 +119,9 @@ Add security, observability, and resilience required for production deployment.
 | FR-OBS-002 | Structured logging | P1 |
 | FR-OBS-003 | Prometheus metrics | P1 |
 | FR-INF-004 | Resilience patterns | P1 |
+| FR-INF-005 | Redis cache for redirects | P1 |
+| FR-INF-006 | Horizontal scaling | P1 |
+| FR-INF-007 | MongoDB replica set | P1 |
 | FR-ADM-001 | Link search | P1 |
 
 ### Technical Tasks
@@ -170,12 +173,50 @@ Add security, observability, and resilience required for production deployment.
 - Cursor-based pagination
 - Sort by `createdAt` descending
 
+#### 2.9 Redis Cache for Redirects
+- Add `StackExchange.Redis` NuGet package
+- Implement `ICacheService` interface in Application layer
+- Implement `RedisCacheService` in Infrastructure layer (cache-aside pattern)
+- Cache redirect lookups (prefix + code → destination URL) with configurable TTL (default 5 min)
+- Invalidate cache on link disable/expiry via `LinkService`
+- Fall back to MongoDB on Redis failure (resilient — redirect must not break)
+- Add cache hit/miss metrics to Prometheus endpoint
+- Integration tests with Redis Testcontainer
+
+#### 2.10 Horizontal Scaling
+- Verify API is fully stateless (no in-process state beyond DI singletons)
+- Validate `RangeBasedCodeGenerator` supports concurrent instances (each instance pre-allocates its own counter range via atomic `$inc`)
+- Update `docker-compose.yml` to support `--scale api=N` with an Nginx or Traefik load balancer
+- Add load balancer health check routing to `/health/ready`
+- Load test: 1,000 concurrent requests across 3 instances — verify no duplicate codes and <100ms p99 redirect latency
+
+#### 2.11 MongoDB Replica Set
+- Update `docker-compose.yml` with 3-node MongoDB replica set (1 primary + 2 secondaries)
+- Add replica set initialisation script (`rs.initiate()`)
+- Configure `MongoClientSettings` with `ReadPreference.SecondaryPreferred` for redirect reads
+- Configure `WriteConcern.WMajority` for write operations
+- Ensure counter collection (`$inc`) uses `ReadPreference.Primary`
+- Update `MongoDbSettings` to support replica set connection strings
+- Integration test: verify reads go to secondaries, writes go to primary
+
+#### 2.12 Transactional Outbox for Event Reliability
+- Implement outbox collection in MongoDB to store domain events alongside entity writes in the same transaction
+- Background `OutboxProcessor` hosted service to poll and publish events to Service Bus
+- Mark outbox entries as dispatched on successful publish
+- Idempotent event processing (deduplication by event ID)
+- Replace direct `PublishEventsAsync` calls with outbox writes
+- Integration test: verify events are published even if the process restarts after the DB write
+
 ### Exit Criteria
 - All Phase 2 test cases pass (TC-SEC-001 to TC-SEC-004, TC-INF-001 to TC-INF-005)
 - Structured logs contain correlation IDs and are parseable as JSON
 - Metrics endpoint returns redirect latency histograms
 - Rate limiting correctly throttles above configured threshold
 - Circuit breaker opens after 5 consecutive MongoDB failures
+- Redis cache hit rate >80% for redirect requests under sustained load
+- 3 API instances handle 1,000 concurrent redirects with <100ms p99
+- MongoDB replica set failover completes within 10 seconds
+- Domain events are reliably published via transactional outbox (zero event loss)
 
 ---
 

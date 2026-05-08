@@ -473,6 +473,70 @@
 
 ---
 
+### FR-INF-005: Redis Cache for Redirects
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall cache frequently accessed links in Redis to reduce MongoDB read load on the redirect hot path.
+
+**Detailed Requirements:**
+- FR-INF-005.1: Cache link lookups (prefix + short code → destination URL) in Redis with a configurable TTL (default: 5 minutes)
+- FR-INF-005.2: Invalidate cache entries when a link is disabled or expires
+- FR-INF-005.3: Fall back to MongoDB on cache miss (cache-aside pattern)
+- FR-INF-005.4: Redis connection failure shall not block redirects — fall back to direct MongoDB reads
+- FR-INF-005.5: Cache hit/miss ratio shall be exposed via metrics (FR-OBS-003)
+
+**Acceptance Criteria:**
+- Given a link has been redirected once, when the same link is redirected again within the TTL, then the response is served from cache without a MongoDB query
+- Given Redis is unavailable, when a redirect is requested, then the system falls back to MongoDB and the redirect succeeds
+- Given a link is disabled, when the cache entry exists, then the cache entry is invalidated immediately
+
+**Dependencies:** FR-INF-001, FR-RDR-001
+
+---
+
+### FR-INF-006: Horizontal Scaling
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall support running multiple API instances behind a load balancer for horizontal scalability.
+
+**Detailed Requirements:**
+- FR-INF-006.1: The API shall be stateless — no in-process session or memory-dependent state
+- FR-INF-006.2: The short code generator shall support concurrent instances without producing duplicate codes (range pre-allocation per instance)
+- FR-INF-006.3: Health check endpoints shall be compatible with Azure Container Apps or Kubernetes probes
+- FR-INF-006.4: Docker Compose shall support scaling the API service (`docker compose up --scale api=N`)
+- FR-INF-006.5: The system shall handle at least 1,000 concurrent redirect requests across multiple instances
+
+**Acceptance Criteria:**
+- Given 3 API instances are running, when 1,000 concurrent redirect requests are issued, then all requests are served with <100ms p99 latency
+- Given 3 API instances are running, when short codes are generated concurrently, then no duplicate codes are produced
+
+**Dependencies:** FR-INF-001, FR-OBS-001
+
+---
+
+### FR-INF-007: MongoDB Replica Set with Read Preference
+
+- **Priority:** P1
+- **Phase:** 2
+- **Description:** The system shall use a MongoDB replica set with read preference configuration to distribute read load to secondary replicas.
+
+**Detailed Requirements:**
+- FR-INF-007.1: Configure MongoDB connection string for replica set topology
+- FR-INF-007.2: Redirect reads (hot path) shall use `ReadPreference.SecondaryPreferred` to offload the primary
+- FR-INF-007.3: Write operations (link creation, disable, domain registration) shall use `WriteConcern.WMajority` for durability
+- FR-INF-007.4: Short code counter operations shall use `ReadPreference.Primary` to ensure consistency
+- FR-INF-007.5: Docker Compose shall include a 3-node MongoDB replica set for local development
+
+**Acceptance Criteria:**
+- Given a replica set with 1 primary and 2 secondaries, when redirect requests are issued, then reads are distributed across secondaries
+- Given the primary fails, when a secondary is elected, then write operations resume within 10 seconds
+
+**Dependencies:** FR-INF-001, FR-INF-004
+
+---
+
 ## 8. Analytics (Future)
 
 ### FR-ANL-001: Track Redirect Counts
