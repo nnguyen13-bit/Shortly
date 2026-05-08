@@ -4,7 +4,7 @@ using Shortly.Infrastructure.Persistence.Documents;
 
 namespace Shortly.Infrastructure.Persistence.Mappers;
 
-internal static class CustomDomainMapper
+public static class CustomDomainMapper
 {
     public static CustomDomainDocument ToDocument(CustomDomain domain)
     {

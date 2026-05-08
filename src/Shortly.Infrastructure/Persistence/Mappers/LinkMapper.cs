@@ -3,7 +3,7 @@ using Shortly.Infrastructure.Persistence.Documents;
 
 namespace Shortly.Infrastructure.Persistence.Mappers;
 
-internal static class LinkMapper
+public static class LinkMapper
 {
     public static LinkDocument ToDocument(Link link)
     {
