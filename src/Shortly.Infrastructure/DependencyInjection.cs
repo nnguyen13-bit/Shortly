@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Shortly.Application.Interfaces;
+using Shortly.Infrastructure.Caching;
 using Shortly.Infrastructure.CodeGeneration;
 using Shortly.Infrastructure.Configuration;
 using Shortly.Infrastructure.Health;
@@ -37,6 +38,25 @@ public static class DependencyInjection
 
         services.AddHealthChecks()
             .AddCheck<MongoDbHealthCheck>("mongodb", tags: ["ready"]);
+
+        // Redis cache — falls back to NoOp if not configured
+        var redisConnectionString = configuration.GetSection(RedisSettings.SectionName)
+            .GetValue<string>(nameof(RedisSettings.ConnectionString));
+
+        if (!string.IsNullOrWhiteSpace(redisConnectionString))
+        {
+            services.Configure<RedisSettings>(configuration.GetSection(RedisSettings.SectionName));
+            services.AddStackExchangeRedisCache(options =>
+            {
+                options.Configuration = redisConnectionString;
+                options.InstanceName = "shortly:";
+            });
+            services.AddSingleton<IRedirectCache, RedisRedirectCache>();
+        }
+        else
+        {
+            services.AddSingleton<IRedirectCache, NoOpRedirectCache>();
+        }
 
         return services;
     }

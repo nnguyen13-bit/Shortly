@@ -11,17 +11,20 @@ public sealed class LinkService
     private readonly ICustomDomainRepository _domainRepository;
     private readonly IShortCodeGenerator _codeGenerator;
     private readonly IEventPublisher _eventPublisher;
+    private readonly IRedirectCache _redirectCache;
 
     public LinkService(
         ILinkRepository linkRepository,
         ICustomDomainRepository domainRepository,
         IShortCodeGenerator codeGenerator,
-        IEventPublisher eventPublisher)
+        IEventPublisher eventPublisher,
+        IRedirectCache redirectCache)
     {
         _linkRepository = linkRepository;
         _domainRepository = domainRepository;
         _codeGenerator = codeGenerator;
         _eventPublisher = eventPublisher;
+        _redirectCache = redirectCache;
     }
 
     public async Task<Result<Link>> CreateAsync(
@@ -95,6 +98,7 @@ public sealed class LinkService
 
         link.Disable();
         await _linkRepository.UpdateAsync(link, cancellationToken);
+        await _redirectCache.EvictAsync(domainPrefix, shortCode, cancellationToken);
         await PublishEventsAsync(link);
 
         return Result<Link>.Success(link);

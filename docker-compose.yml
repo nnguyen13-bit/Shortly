@@ -13,8 +13,12 @@ services:
       - ServiceBus__TopicName=shortly-events
       - ApiKeys__Clients__0__Name=docker-client
       - ApiKeys__Clients__0__Key=dev-api-key-shortly-2026
+      - Redis__ConnectionString=redis:6379
+      - Redis__CacheTtlSeconds=300
     depends_on:
       mongo:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     restart: unless-stopped
 
@@ -31,5 +35,19 @@ services:
       retries: 5
       start_period: 10s
 
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
 volumes:
   mongo-data:
+  redis-data:
