@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using Shortly.Api.Contracts;
+using Shortly.Api.RateLimiting;
 using Shortly.Api.Validation;
 using Shortly.Application.Common;
 using Shortly.Application.Links;
@@ -10,6 +12,7 @@ namespace Shortly.Api.Controllers;
 
 [ApiController]
 [Authorize]
+[EnableRateLimiting(RateLimitingPolicies.PerClient)]
 [Route("api/[controller]")]
 public sealed class LinksController : ControllerBase
 {

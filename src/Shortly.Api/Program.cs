@@ -1,5 +1,6 @@
 using Shortly.Api.Authentication;
 using Shortly.Api.Middleware;
+using Shortly.Api.RateLimiting;
 using Shortly.Application;
 using Shortly.Infrastructure;
 
@@ -26,6 +27,7 @@ builder.Services.AddAuthentication(ApiKeyDefaults.AuthenticationScheme)
     .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
         ApiKeyDefaults.AuthenticationScheme, _ => { });
 builder.Services.AddAuthorization();
+builder.Services.AddRateLimitingPolicies(builder.Configuration);
 
 var app = builder.Build();
 
@@ -40,6 +42,7 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 app.MapControllers();
 
 // Health check endpoints

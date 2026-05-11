@@ -1,11 +1,14 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
+using Shortly.Api.RateLimiting;
 using Shortly.Application.Links;
 
 namespace Shortly.Api.Controllers;
 
 [ApiController]
 [AllowAnonymous]
+[EnableRateLimiting(RateLimitingPolicies.PerIp)]
 [ApiExplorerSettings(IgnoreApi = true)]
 public sealed class RedirectController : ControllerBase
 {
