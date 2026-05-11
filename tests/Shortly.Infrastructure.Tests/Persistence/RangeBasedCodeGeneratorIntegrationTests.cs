@@ -117,6 +117,54 @@ public sealed class RangeBasedCodeGeneratorIntegrationTests : IAsyncLifetime
     // --- Multiple instances sharing counter ---
 
     [Fact]
+    public async Task GenerateAsync_1000ConcurrentRequests_AllUnique()
+    {
+        var prefix = new DomainPrefix("op");
+        var codes = new System.Collections.Concurrent.ConcurrentBag<string>();
+
+        var tasks = Enumerable.Range(0, 1000).Select(_ => Task.Run(async () =>
+        {
+            var code = await _generator.GenerateAsync(prefix);
+            codes.Add(code.Value);
+        }));
+
+        await Task.WhenAll(tasks);
+
+        Assert.Equal(1000, codes.Count);
+        Assert.Equal(1000, codes.Distinct().Count());
+    }
+
+    [Fact]
+    public async Task GenerateAsync_1000ConcurrentRequests_MultipleInstances_AllUnique()
+    {
+        var settings = Options.Create(new MongoDbSettings
+        {
+            ConnectionString = _container.GetConnectionString(),
+            DatabaseName = "shortly_codegen_test"
+        });
+
+        var generator1 = new RangeBasedCodeGenerator(settings);
+        var generator2 = new RangeBasedCodeGenerator(settings);
+        var generator3 = new RangeBasedCodeGenerator(settings);
+
+        var generators = new[] { generator1, generator2, generator3 };
+        var prefix = new DomainPrefix("qr");
+        var codes = new System.Collections.Concurrent.ConcurrentBag<string>();
+
+        var tasks = Enumerable.Range(0, 1000).Select(i => Task.Run(async () =>
+        {
+            var gen = generators[i % 3];
+            var code = await gen.GenerateAsync(prefix);
+            codes.Add(code.Value);
+        }));
+
+        await Task.WhenAll(tasks);
+
+        Assert.Equal(1000, codes.Count);
+        Assert.Equal(1000, codes.Distinct().Count());
+    }
+
+    [Fact]
     public async Task GenerateAsync_TwoInstances_NoDuplicates()
     {
         var settings = Options.Create(new MongoDbSettings

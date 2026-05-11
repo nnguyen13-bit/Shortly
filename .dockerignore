@@ -10,8 +10,8 @@
 **/requirements
 **/project-config
 **/infra
+**/src
 **/*.md
 **/*.user
 **/docker-compose*.yml
-**/Dockerfile
 **/.dockerignore

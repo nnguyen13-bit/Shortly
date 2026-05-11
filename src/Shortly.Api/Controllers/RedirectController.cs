@@ -17,7 +17,7 @@ public sealed class RedirectController : ControllerBase
     /// <summary>
     /// Resolve a short link and redirect to the destination URL.
     /// </summary>
-    [HttpGet("{prefix:regex(^[a-z0-9]{{2,4}}$)}/{code:regex(^[a-zA-Z0-9]{{5,8}}$)}")]
+    [HttpGet("{prefix:regex(^[[a-z0-9]]{{2,4}}$)}/{code:regex(^[[a-zA-Z0-9]]{{5,8}}$)}")]
     public async Task<IActionResult> Redirect(string prefix, string code, CancellationToken cancellationToken)
     {
         var result = await _redirectService.ResolveAsync(prefix, code, cancellationToken);

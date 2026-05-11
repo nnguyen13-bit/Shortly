@@ -12,6 +12,7 @@ public sealed class RangeBasedCodeGenerator : IShortCodeGenerator
 {
     private readonly IMongoCollection<CounterDocument> _counters;
     private readonly ConcurrentDictionary<string, CounterRange> _ranges = new();
+    private readonly ConcurrentDictionary<string, SemaphoreSlim> _claimLocks = new();
     private const int RangeSize = 1000;
     private const long InitialCounterValue = 100_000_000;
 
@@ -31,10 +32,25 @@ public sealed class RangeBasedCodeGenerator : IShortCodeGenerator
             return new ShortCode(Base62.Encode(value));
         }
 
-        var newEnd = await ClaimRangeAsync(prefix.Value, cancellationToken);
-        range.Reset(newEnd - RangeSize + 1, newEnd);
-        range.TryGetNext(out value);
-        return new ShortCode(Base62.Encode(value));
+        var claimLock = _claimLocks.GetOrAdd(prefix.Value, _ => new SemaphoreSlim(1, 1));
+        await claimLock.WaitAsync(cancellationToken);
+        try
+        {
+            // Double-check after acquiring lock — another thread may have claimed already
+            if (range.TryGetNext(out value))
+            {
+                return new ShortCode(Base62.Encode(value));
+            }
+
+            var newEnd = await ClaimRangeAsync(prefix.Value, cancellationToken);
+            range.Reset(newEnd - RangeSize + 1, newEnd);
+            range.TryGetNext(out value);
+            return new ShortCode(Base62.Encode(value));
+        }
+        finally
+        {
+            claimLock.Release();
+        }
     }
 
     private async Task<long> ClaimRangeAsync(string prefix, CancellationToken cancellationToken)
