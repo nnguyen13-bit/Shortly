@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Shortly.Application.Interfaces;
 using Shortly.Infrastructure.CodeGeneration;
 using Shortly.Infrastructure.Configuration;
+using Shortly.Infrastructure.Health;
 using Shortly.Infrastructure.Persistence;
 using Shortly.Infrastructure.Events;
 
@@ -33,6 +34,9 @@ public static class DependencyInjection
         }
 
         services.AddHostedService<MongoDbIndexInitialiser>();
+
+        services.AddHealthChecks()
+            .AddCheck<MongoDbHealthCheck>("mongodb", tags: ["ready"]);
 
         return services;
     }

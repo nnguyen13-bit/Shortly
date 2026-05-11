@@ -24,6 +24,8 @@ public sealed class MongoDbContext
     public IMongoCollection<T> GetCollection<T>(string name) =>
         _database.GetCollection<T>(name);
 
+    public IMongoDatabase GetDatabase() => _database;
+
     private static void RegisterSerialiserConventions()
     {
         if (_serialiserRegistered) return;
