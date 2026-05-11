@@ -10,7 +10,7 @@ public sealed class MongoLinkRepositoryTests
 
     public MongoLinkRepositoryTests(MongoDbFixture fixture)
     {
-        _repository = new MongoLinkRepository(fixture.Context);
+        _repository = new MongoLinkRepository(fixture.Context, TestResiliencePipeline.Provider);
     }
 
     // --- AddAsync + GetByIdAsync ---

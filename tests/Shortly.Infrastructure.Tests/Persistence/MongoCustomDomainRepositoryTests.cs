@@ -11,7 +11,7 @@ public sealed class MongoCustomDomainRepositoryTests
 
     public MongoCustomDomainRepositoryTests(MongoDbFixture fixture)
     {
-        _repository = new MongoCustomDomainRepository(fixture.Context);
+        _repository = new MongoCustomDomainRepository(fixture.Context, TestResiliencePipeline.Provider);
     }
 
     // --- AddAsync + GetByPrefixAsync ---

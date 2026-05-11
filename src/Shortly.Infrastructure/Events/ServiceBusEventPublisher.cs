@@ -2,9 +2,12 @@ using System.Text.Json;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
+using Polly.Registry;
 using Shortly.Application.Interfaces;
 using Shortly.Domain.Common;
 using Shortly.Infrastructure.Configuration;
+using Shortly.Infrastructure.Resilience;
 
 namespace Shortly.Infrastructure.Events;
 
@@ -13,6 +16,7 @@ public sealed class ServiceBusEventPublisher : IEventPublisher, IAsyncDisposable
     private readonly ServiceBusSender _sender;
     private readonly ServiceBusClient _client;
     private readonly ILogger<ServiceBusEventPublisher> _logger;
+    private readonly ResiliencePipeline _pipeline;
 
     private static readonly JsonSerializerOptions SerialiserOptions = new()
     {
@@ -20,7 +24,10 @@ public sealed class ServiceBusEventPublisher : IEventPublisher, IAsyncDisposable
         WriteIndented = false
     };
 
-    public ServiceBusEventPublisher(IOptions<ServiceBusSettings> settings, ILogger<ServiceBusEventPublisher> logger)
+    public ServiceBusEventPublisher(
+        IOptions<ServiceBusSettings> settings,
+        ILogger<ServiceBusEventPublisher> logger,
+        ResiliencePipelineProvider<string> pipelineProvider)
     {
         var config = settings.Value;
 
@@ -30,14 +37,16 @@ public sealed class ServiceBusEventPublisher : IEventPublisher, IAsyncDisposable
         _client = new ServiceBusClient(config.ConnectionString);
         _sender = _client.CreateSender(config.TopicName);
         _logger = logger;
+        _pipeline = pipelineProvider.GetPipeline(ResilienceKeys.ServiceBus);
     }
 
     // Internal constructor for testing with injected dependencies
-    internal ServiceBusEventPublisher(ServiceBusSender sender, ILogger<ServiceBusEventPublisher> logger)
+    internal ServiceBusEventPublisher(ServiceBusSender sender, ILogger<ServiceBusEventPublisher> logger, ResiliencePipeline pipeline)
     {
         _client = null!;
         _sender = sender ?? throw new ArgumentNullException(nameof(sender));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _pipeline = pipeline;
     }
 
     public async Task PublishAsync(DomainEvent domainEvent, CancellationToken cancellationToken = default)
@@ -46,13 +55,16 @@ public sealed class ServiceBusEventPublisher : IEventPublisher, IAsyncDisposable
 
         try
         {
-            await _sender.SendMessageAsync(message, cancellationToken);
-            _logger.LogInformation("Published domain event to Service Bus: {EventType} ({EventId})",
-                domainEvent.GetType().Name, domainEvent.EventId);
+            await _pipeline.ExecuteAsync(async ct =>
+            {
+                await _sender.SendMessageAsync(message, ct);
+                _logger.LogInformation("Published domain event to Service Bus: {EventType} ({EventId})",
+                    domainEvent.GetType().Name, domainEvent.EventId);
+            }, cancellationToken);
         }
-        catch (ServiceBusException ex)
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to publish domain event to Service Bus: {EventType} ({EventId})",
+            _logger.LogError(ex, "Failed to publish domain event to Service Bus after all retries: {EventType} ({EventId})",
                 domainEvent.GetType().Name, domainEvent.EventId);
             throw;
         }

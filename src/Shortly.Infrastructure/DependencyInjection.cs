@@ -7,6 +7,7 @@ using Shortly.Infrastructure.Configuration;
 using Shortly.Infrastructure.Health;
 using Shortly.Infrastructure.Persistence;
 using Shortly.Infrastructure.Events;
+using Shortly.Infrastructure.Resilience;
 
 namespace Shortly.Infrastructure;
 
@@ -16,6 +17,8 @@ public static class DependencyInjection
     {
         services.Configure<MongoDbSettings>(configuration.GetSection(MongoDbSettings.SectionName));
         services.Configure<ServiceBusSettings>(configuration.GetSection(ServiceBusSettings.SectionName));
+
+        services.AddResiliencePolicies();
 
         services.AddSingleton<MongoDbContext>();
         services.AddScoped<ILinkRepository, MongoLinkRepository>();

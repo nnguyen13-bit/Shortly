@@ -29,7 +29,7 @@ public sealed class RedirectLatencyTests : IAsyncLifetime
         });
 
         _context = new MongoDbContext(settings);
-        _repository = new MongoLinkRepository(_context);
+        _repository = new MongoLinkRepository(_context, TestResiliencePipeline.Provider);
 
         // Create indexes
         var indexInitialiser = new MongoDbIndexInitialiser(_context, NullLogger<MongoDbIndexInitialiser>.Instance);
