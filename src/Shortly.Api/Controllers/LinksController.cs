@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortly.Api.Contracts;
+using Shortly.Api.Validation;
 using Shortly.Application.Common;
 using Shortly.Application.Links;
 using Shortly.Domain.LinkManagement;
@@ -27,12 +28,16 @@ public sealed class LinksController : ControllerBase
     [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> Create([FromBody] CreateLinkRequest request, CancellationToken cancellationToken)
     {
+        var sanitisedTags = request.Tags?.ToDictionary(
+            kvp => InputSanitiser.Sanitise(kvp.Key)!,
+            kvp => InputSanitiser.Sanitise(kvp.Value)!);
+
         var result = await _linkService.CreateAsync(
             request.DomainPrefix,
             request.DestinationUrl,
-            request.CreatedBy,
+            InputSanitiser.Sanitise(request.CreatedBy)!,
             request.ExpiresAt,
-            request.Tags,
+            sanitisedTags,
             cancellationToken);
 
         if (!result.IsSuccess)

@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http.Features;
 using Shortly.Api.Contracts;
 using Shortly.Domain.Common;
 
@@ -26,6 +27,12 @@ public sealed class ExceptionHandlingMiddleware
         {
             _logger.LogInformation("Request was cancelled by the client.");
             context.Response.StatusCode = 499; // Client Closed Request
+        }
+        catch (BadHttpRequestException ex) when (ex.StatusCode == StatusCodes.Status413RequestEntityTooLarge)
+        {
+            _logger.LogWarning("Request body too large.");
+            await WriteErrorResponseAsync(context, HttpStatusCode.RequestEntityTooLarge,
+                "Request body exceeds the maximum allowed size of 64 KB.");
         }
         catch (DomainException ex)
         {

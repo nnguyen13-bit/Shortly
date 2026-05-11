@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Shortly.Api.Contracts;
 
-public sealed class CreateLinkRequest
+public sealed class CreateLinkRequest : IValidatableObject
 {
     [Required]
     [StringLength(4, MinimumLength = 2)]
@@ -21,6 +21,42 @@ public sealed class CreateLinkRequest
     public DateTimeOffset? ExpiresAt { get; init; }
 
     public Dictionary<string, string>? Tags { get; init; }
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (Tags is null)
+            yield break;
+
+        if (Tags.Count > 10)
+        {
+            yield return new ValidationResult(
+                "Tags cannot exceed 10 entries.",
+                [nameof(Tags)]);
+        }
+
+        foreach (var (key, value) in Tags)
+        {
+            if (string.IsNullOrWhiteSpace(key))
+            {
+                yield return new ValidationResult(
+                    "Tag key cannot be empty.",
+                    [nameof(Tags)]);
+            }
+            else if (key.Length > 50)
+            {
+                yield return new ValidationResult(
+                    $"Tag key '{key}' exceeds 50 characters.",
+                    [nameof(Tags)]);
+            }
+
+            if (value is not null && value.Length > 200)
+            {
+                yield return new ValidationResult(
+                    $"Tag value for key '{key}' exceeds 200 characters.",
+                    [nameof(Tags)]);
+            }
+        }
+    }
 }
 
 public sealed class LinkResponse

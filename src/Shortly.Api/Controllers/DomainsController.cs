@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortly.Api.Contracts;
+using Shortly.Api.Validation;
 using Shortly.Application.Common;
 using Shortly.Application.CustomDomains;
 using Shortly.Domain.CustomDomains;
@@ -30,8 +31,8 @@ public sealed class DomainsController : ControllerBase
     {
         var result = await _domainService.RegisterAsync(
             request.Prefix,
-            request.Name,
-            request.Description,
+            InputSanitiser.Sanitise(request.Name)!,
+            InputSanitiser.Sanitise(request.Description),
             cancellationToken);
 
         if (!result.IsSuccess)
