@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortly.Application.Links;
 
 namespace Shortly.Api.Controllers;
 
 [ApiController]
+[AllowAnonymous]
 [ApiExplorerSettings(IgnoreApi = true)]
 public sealed class RedirectController : ControllerBase
 {

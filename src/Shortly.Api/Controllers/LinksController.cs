@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Shortly.Api.Contracts;
 using Shortly.Application.Common;
@@ -7,6 +8,7 @@ using Shortly.Domain.LinkManagement;
 namespace Shortly.Api.Controllers;
 
 [ApiController]
+[Authorize]
 [Route("api/[controller]")]
 public sealed class LinksController : ControllerBase
 {

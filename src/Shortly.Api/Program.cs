@@ -1,3 +1,4 @@
+using Shortly.Api.Authentication;
 using Shortly.Api.Middleware;
 using Shortly.Application;
 using Shortly.Infrastructure;
@@ -11,6 +12,13 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 
+// Authentication
+builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection(ApiKeySettings.SectionName));
+builder.Services.AddAuthentication(ApiKeyDefaults.AuthenticationScheme)
+    .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyDefaults.AuthenticationScheme, _ => { });
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -22,6 +30,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
 app.MapControllers();
 
 // Health check endpoints

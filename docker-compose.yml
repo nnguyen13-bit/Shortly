@@ -11,6 +11,8 @@ services:
       - MongoDB__DatabaseName=shortly
       - ServiceBus__ConnectionString=
       - ServiceBus__TopicName=shortly-events
+      - ApiKeys__Clients__0__Name=docker-client
+      - ApiKeys__Clients__0__Key=dev-api-key-shortly-2026
     depends_on:
       mongo:
         condition: service_healthy
